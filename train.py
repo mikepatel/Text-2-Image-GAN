@@ -15,7 +15,7 @@ import pickle
 from datetime import datetime
 import matplotlib.pyplot as plt
 
-from build_model import *
+from build_model import build_cnn, build_rnn
 
 
 ############################################################
@@ -73,28 +73,36 @@ def train_rnn():
     tf.reset_default_graph()
     k.set_learning_phase(1)  # 1 = train, 0 = test
 
+    ##########
     # Placeholders
     real_image_pl = tf.placeholder(dtype=tf.float32,
                                    shape=[None, IMAGE_ROWS, IMAGE_COLS, IMAGE_CHANNELS],
                                    name="real_image_pl")
+
     wrong_image_pl = tf.placeholder(dtype=tf.float32,
                                     shape=[None, IMAGE_ROWS, IMAGE_COLS, IMAGE_CHANNELS],
                                     name="wrong_image_pl")
+
     real_caption_pl = tf.placeholder(dtype=tf.float32,
                                      shape=[None, None],
                                      name="real_caption_pl")
+
     wrong_caption_pl = tf.placeholder(dtype=tf.float32,
                                       shape=[None, None],
                                       name="wrong_caption_pl")
 
+    ##########
     # Instantiate models
+    # using backend TF to build model
     cnn_real_image = build_cnn(real_image_pl, reuse=False)
     cnn_wrong_image = build_cnn(wrong_image_pl, reuse=True)
 
+    # using Keras to build model
     rnn = build_rnn()
     rnn_real_caption = rnn(real_caption_pl)
     rnn_wrong_caption = rnn(wrong_caption_pl)
 
+    ##########
     # Loss function
     def cosine_similarity(a, b):
         """
@@ -122,26 +130,39 @@ def train_rnn():
                                          cosine_similarity(cnn_real_image, rnn_real_caption) +
                                          cosine_similarity(cnn_wrong_image, rnn_real_caption)))
 
+    ##########
     # Optimizer
     # .minimize() takes care of both computing the gradients and applying them to variables
     # https://www.tensorflow.org/api_docs/python/tf/train/Optimizer#processing_gradients_before_applying_them
     optimizer = tf.train.AdamOptimizer(learning_rate=0.0001, beta1=0.5)
+
+    # compute gradients
     grads, _ = tf.clip_by_global_norm(
         tf.gradients(rnn_loss,
                      tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="cnn") + rnn.trainable_weights
                      ), clip_norm=10)
+
+    # apply gradients
     rnn_optimizer = optimizer.apply_gradients(zip(grads,
                                                   tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="cnn") +
                                                   rnn.trainable_weights))
 
-    # session initialization and TensorBoard setup
+    ##########
+    # Session initialization and TensorBoard Setup
     sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
     tf.summary.scalar(name="RNN Loss", tensor=rnn_loss)
     tb = tf.summary.merge_all()
     tb_writer = tf.summary.FileWriter(logdir=save_folder, graph=sess.graph)
     sess.run(tf.global_variables_initializer())
 
+    ##########
     # training loop
+    for epoch in range(NUM_EPOCHS+1):
+        if epoch % 100 == 0:
+            print("\nEpoch: {}".format(epoch))
+            print("RNN Loss {}".format())
+
+    rnn.save_weights("rnn_weights.h5")
 
 ############################################################
 # GAN
