@@ -1,4 +1,5 @@
 # Notes:
+#   - Based on the work of: https://arxiv.org/pdf/1605.05396.pdf
 #   - Using both backend TF and Keras
 #   - TF v1.12
 
@@ -7,6 +8,7 @@
 # IMPORTS
 import tensorflow as tf
 import keras.backend as k
+from tensorflow.python.keras.preprocessing.sequence import pad_sequences
 
 import os
 import sys
@@ -156,13 +158,69 @@ def train_rnn():
     sess.run(tf.global_variables_initializer())
 
     ##########
+    def get_random_int(min=0, max=10, number=5):
+        """Return a list of random integer by the given range and quantity.
+
+        Examples
+        ---------
+        >>> r = get_random_int(min=0, max=10, number=5)
+        ... [10, 2, 3, 3, 7]
+        """
+        return [np.random.randint(min, max) for p in range(0, number)]
+
     # training loop
     for epoch in range(NUM_EPOCHS+1):
+        # right captions
+        cap_idx = get_random_int(min=0, max=n_captions_train - 1, number=BATCH_SIZE)
+        real_caps = captions_ids_train[cap_idx]
+        real_caps = pad_sequences(real_caps, maxlen=128, padding="post")  # pad captions to fixed length
+
+        # right images
+        img_idx = np.floor(np.asarray(cap_idx).astype("float") / n_captions_per_image.astype("int"))
+        real_images = images_train[img_idx]
+
+        # wrong caption
+        cap_idx = get_random_int(min=0, max=n_captions_train - 1, number=BATCH_SIZE)
+        wrong_caps = captions_ids_train[cap_idx]
+        wrong_caps = pad_sequences(wrong_caps, maxlen=128, padding="post")
+
+        # wrong images
+        img_idx = get_random_int(min=0, max=n_images_train - 1, number=BATCH_SIZE)
+        wrong_images = images_train[img_idx]
+
+        # preprocessing on images
+        # real_images = threading_data(real_images, prepro_img, mode="train")
+        # wrong_images = threading_data(wrong_images, prepro_img, mode="train")
+
+        rnn_error, _ = sess.run(
+            [rnn_loss, rnn_optimizer],
+            feed_dict={
+                real_caption_pl: real_caps,
+                real_image_pl: real_images,
+                wrong_caption_pl: wrong_caps,
+                wrong_image_pl: wrong_images
+            }
+        )
+
         if epoch % 100 == 0:
             print("\nEpoch: {}".format(epoch))
-            print("RNN Loss {}".format())
+            print("RNN Loss {}".format(rnn_error))
 
+            summary = sess.run(
+                tb,
+                feed_dict={
+                    real_caption_pl: real_caps,
+                    real_image_pl: real_images,
+                    wrong_caption_pl: wrong_caps,
+                    wrong_image_pl: wrong_images
+                }
+            )
+
+            tb_writer.add_summary(summary=summary, global_step=epoch)
+
+    # save final weights to load into for GAN
     rnn.save_weights("rnn_weights.h5")
+
 
 ############################################################
 # GAN
