@@ -2,6 +2,8 @@
 #   - Based on the work of: https://arxiv.org/pdf/1605.05396.pdf
 #   - Using both backend TF and Keras
 #   - TF v1.12
+#   - CUDA v9.0
+#   - cuDNN v7.4
 
 
 ############################################################
@@ -67,7 +69,7 @@ images_test = np.array(images_test)
 
 ############################################################
 # RNN
-# CNN for text embedding is built using backend TF
+# CNN for text embedding is built using Keras
 # LSTM for text embedding is built using Keras
 def train_rnn():
     print("\nTraining RNN...")
@@ -95,14 +97,18 @@ def train_rnn():
 
     ##########
     # Instantiate models
-    # using backend TF to build model
-    cnn_real_image = build_cnn(real_image_pl, reuse=False)
-    cnn_wrong_image = build_cnn(wrong_image_pl, reuse=True)
+    # using Keras to build model
+    cnn = build_cnn()
+    cnn_real_image = cnn(real_image_pl)
+    cnn_wrong_image = cnn(wrong_image_pl)
 
     # using Keras to build model
     rnn = build_rnn()
     rnn_real_caption = rnn(real_caption_pl)
     rnn_wrong_caption = rnn(wrong_caption_pl)
+
+    print(cnn_real_image.shape)
+    print(rnn_real_caption.shape)
 
     ##########
     # Loss function
@@ -122,6 +128,7 @@ def train_rnn():
              )
         return cs
 
+    #
     alpha = 0.2
     rnn_loss = tf.reduce_mean(tf.maximum(0.,
                                          alpha -
@@ -141,13 +148,12 @@ def train_rnn():
     # compute gradients
     grads, _ = tf.clip_by_global_norm(
         tf.gradients(rnn_loss,
-                     tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="cnn") + rnn.trainable_weights
+                     cnn.trainable_weights + rnn.trainable_weights
                      ), clip_norm=10)
 
     # apply gradients
     rnn_optimizer = optimizer.apply_gradients(zip(grads,
-                                                  tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope="cnn") +
-                                                  rnn.trainable_weights))
+                                                  cnn.trainable_weights + rnn.trainable_weights))
 
     ##########
     # Session initialization and TensorBoard Setup
@@ -176,7 +182,7 @@ def train_rnn():
         real_caps = pad_sequences(real_caps, maxlen=128, padding="post")  # pad captions to fixed length
 
         # right images
-        img_idx = np.floor(np.asarray(cap_idx).astype("float") / n_captions_per_image.astype("int"))
+        img_idx = np.floor(np.asarray(cap_idx).astype("float") / n_captions_per_image).astype("int")
         real_images = images_train[img_idx]
 
         # wrong caption
@@ -206,6 +212,7 @@ def train_rnn():
             print("\nEpoch: {}".format(epoch))
             print("RNN Loss {}".format(rnn_error))
 
+            # TensorBoard
             summary = sess.run(
                 tb,
                 feed_dict={
@@ -219,7 +226,8 @@ def train_rnn():
             tb_writer.add_summary(summary=summary, global_step=epoch)
 
     # save final weights to load into for GAN
-    rnn.save_weights("rnn_weights.h5")
+    rnn_weights_file = save_folder + "\\rnn_weights.h5"
+    rnn.save_weights(rnn_weights_file)
 
 
 ############################################################
