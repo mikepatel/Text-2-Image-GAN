@@ -9,6 +9,7 @@ Project description:
     To synthesize images from text-based captions as a form of reverse image captioning.
 
 File description:
+    To run preprocessing and training algorithms
 
 Dataset: Oxford-102 flowers
 
