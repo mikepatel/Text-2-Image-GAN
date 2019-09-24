@@ -34,6 +34,7 @@ def my_leaky_relu(tensor):
 
 ################################################################################
 # CNN for text embedding
+# using Keras
 def build_cnn():
     # Input
     cnn_inputs = k.Input(
@@ -98,6 +99,42 @@ def build_cnn():
     cnn_outputs = t
 
     m = k.Model(inputs=cnn_inputs, outputs=cnn_outputs)
+    m.summary()
+    return m
+
+
+################################################################################
+# RNN for text embedding
+# using Keras
+def build_rnn():
+    # Input
+    rnn_inputs = k.layers.Input(
+        shape=(None, )
+    )
+
+    # Embedding layer
+    t = k.layers.Embedding(
+        input_dim=8000,  # vocab size
+        output_dim=256  # word embedding size
+    )(rnn_inputs)
+
+    # GPU check / LSTM layer
+    if tf.test.is_gpu_available():
+        t = k.layers.CuDNNLSTM(
+            units=128,
+            return_sequences=False
+        )(t)
+
+    else:
+        t = k.layers.LSTM(
+            units=128,
+            return_sequences=False
+        )(t)
+
+    # Output
+    rnn_outputs = t
+
+    m = k.Model(inputs=rnn_inputs, outputs=rnn_outputs)
     m.summary()
     return m
 
