@@ -11,7 +11,7 @@ Project description:
 File description:
     To build model definitions for CNN, RNN, Generator, Discriminator
 
-Dataset: Oxford-102 flowers
+Dataset: Oxford-102 flowers, http://www.robots.ox.ac.uk/~vgg/data/flowers/102/
 
 Notes:
     - using Keras to build CNN and RNN

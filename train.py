@@ -11,7 +11,7 @@ Project description:
 File description:
     To run preprocessing and training algorithms
 
-Dataset: Oxford-102 flowers
+Dataset: Oxford-102 flowers, http://www.robots.ox.ac.uk/~vgg/data/flowers/102/
 
 """
 ################################################################################
