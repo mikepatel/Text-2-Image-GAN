@@ -40,6 +40,23 @@ def train_rnn():
 def train_gan():
     print("\nTraining GAN...")
 
+    pickle_filepath = os.path.join(os.getcwd(), "data/pickle data")
+
+    with open(os.path.join(pickle_filepath, "_vocab.pickle"), 'rb') as f:
+        vocab = pickle.load(f)
+
+    with open(os.path.join(pickle_filepath, "_image_train.pickle"), 'rb') as f:
+        _, images_train = pickle.load(f)
+
+    with open(os.path.join(pickle_filepath, "_image_test.pickle"), 'rb') as f:
+        _, images_test = pickle.load(f)
+
+    with open(os.path.join(pickle_filepath, "_n.pickle"), 'rb') as f:
+        n_captions_train, n_captions_test, n_captions_per_image, n_images_train, n_images_test = pickle.load(f)
+
+    with open(os.path.join(pickle_filepath, "_caption.pickle"), 'rb') as f:
+        captions_ids_train, captions_ids_test = pickle.load(f)
+
 
 ################################################################################
 # MAIN
