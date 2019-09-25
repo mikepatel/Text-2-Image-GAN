@@ -21,7 +21,7 @@ Notes:
 ################################################################################
 # Imports
 import tensorflow as tf
-import tensorflow.python.keras as k
+from tensorflow.python import keras as k
 
 from parameters import IMAGE_ROWS, IMAGE_COLS, IMAGE_CHANNELS, LEAKY_ALPHA
 
