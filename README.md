@@ -13,7 +13,9 @@ Coming soon!
 ```
 
 ## Results
-Preliminary Results
+* Older results, models, and saved weights in [Archive](https://github.com/mikepatel/Text-2-Image-GAN/tree/master/Archive)
+
+### Preliminary Results
 
 | 0 epochs  | 5000 epochs  | 10000 epochs |
 :------------:|:------------:|:------------:
